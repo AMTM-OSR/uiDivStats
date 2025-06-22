@@ -13,7 +13,7 @@
 ##       Forked from https://github.com/jackyaz/uiDivStats       ##
 ##                                                               ##
 ###################################################################
-# Last Modified: 2025-Jun-06
+# Last Modified: 2025-Jun-21
 #------------------------------------------------------------------
 
 #################        Shellcheck directives      ###############
@@ -36,7 +36,7 @@
 ### Start of script variables ###
 readonly SCRIPT_NAME="uiDivStats"
 readonly SCRIPT_VERSION="v4.0.11"
-readonly SCRIPT_VERSTAG="25060622"
+readonly SCRIPT_VERSTAG="25062121"
 SCRIPT_BRANCH="develop"
 SCRIPT_REPO="https://raw.githubusercontent.com/AMTM-OSR/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -623,16 +623,17 @@ Conf_Exists()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Dec-02] ##
+## Modified by Martinski W. [2025-Jun-20] ##
 ##----------------------------------------##
 Auto_ServiceEvent()
 {
+	local theScriptFilePath="/jffs/scripts/$SCRIPT_NAME"
 	case $1 in
 		create)
 			if [ -f /jffs/scripts/service-event ]
 			then
 				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)"
-				STARTUPLINECOUNTEX="$(grep -cx 'if echo "$2" | /bin/grep -q "'"$SCRIPT_NAME"'"; then { /jffs/scripts/'"$SCRIPT_NAME"' service_event "$@" & }; fi # '"$SCRIPT_NAME" /jffs/scripts/service-event)"
+				STARTUPLINECOUNTEX="$(grep -cx 'if echo "$2" | /bin/grep -q "'"$SCRIPT_NAME"'"; then { '"$theScriptFilePath"' service_event "$@" & }; fi # '"$SCRIPT_NAME" /jffs/scripts/service-event)"
 
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }
 				then
@@ -642,13 +643,13 @@ Auto_ServiceEvent()
 				if [ "$STARTUPLINECOUNTEX" -eq 0 ]
 				then
 					{
-					  echo 'if echo "$2" | /bin/grep -q "'"$SCRIPT_NAME"'"; then { /jffs/scripts/'"$SCRIPT_NAME"' service_event "$@" & }; fi # '"$SCRIPT_NAME"
+					  echo 'if echo "$2" | /bin/grep -q "'"$SCRIPT_NAME"'"; then { '"$theScriptFilePath"' service_event "$@" & }; fi # '"$SCRIPT_NAME"
 					} >> /jffs/scripts/service-event
 				fi
 			else
 				{
 				  echo "#!/bin/sh" ; echo
-				  echo 'if echo "$2" | /bin/grep -q "'"$SCRIPT_NAME"'"; then { /jffs/scripts/'"$SCRIPT_NAME"' service_event "$@" & }; fi # '"$SCRIPT_NAME"
+				  echo 'if echo "$2" | /bin/grep -q "'"$SCRIPT_NAME"'"; then { '"$theScriptFilePath"' service_event "$@" & }; fi # '"$SCRIPT_NAME"
 				  echo
 				} > /jffs/scripts/service-event
 				chmod 0755 /jffs/scripts/service-event
@@ -657,8 +658,7 @@ Auto_ServiceEvent()
 		delete)
 			if [ -f /jffs/scripts/service-event ]
 			then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)
-
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/service-event)"
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/service-event
 				fi
@@ -668,16 +668,16 @@ Auto_ServiceEvent()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Dec-02] ##
+## Modified by Martinski W. [2025-Jun-20] ##
 ##----------------------------------------##
 Auto_Startup()
 {
+	local theScriptFilePath="/jffs/scripts/$SCRIPT_NAME"
 	case $1 in
 		create)
 			if [ -f /jffs/scripts/services-start ]
 			then
 				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/services-start)"
-
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/services-start
 				fi
@@ -685,7 +685,7 @@ Auto_Startup()
 			if [ -f /jffs/scripts/post-mount ]
 			then
 				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/post-mount)"
-				STARTUPLINECOUNTEX="$(grep -cx '\[ -x "${1}/entware/bin/opkg" \] && \[ -x /jffs/scripts/'"$SCRIPT_NAME"' \] && /jffs/scripts/'"$SCRIPT_NAME"' startup "$@" & # '"$SCRIPT_NAME" /jffs/scripts/post-mount)"
+				STARTUPLINECOUNTEX="$(grep -cx '\[ -x "${1}/entware/bin/opkg" \] && \[ -x '"$theScriptFilePath"' \] && '"$theScriptFilePath"' startup "$@" & # '"$SCRIPT_NAME" /jffs/scripts/post-mount)"
 
 				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }
 				then
@@ -695,13 +695,13 @@ Auto_Startup()
 				if [ "$STARTUPLINECOUNTEX" -eq 0 ]
 				then
 					{
-					  echo '[ -x "${1}/entware/bin/opkg" ] && [ -x /jffs/scripts/'"$SCRIPT_NAME"' ] && /jffs/scripts/'"$SCRIPT_NAME"' startup "$@" & # '"$SCRIPT_NAME"
+					  echo '[ -x "${1}/entware/bin/opkg" ] && [ -x '"$theScriptFilePath"' ] && '"$theScriptFilePath"' startup "$@" & # '"$SCRIPT_NAME"
 					} >> /jffs/scripts/post-mount
 				fi
 			else
 				{
 				  echo "#!/bin/sh" ; echo
-				  echo '[ -x "${1}/entware/bin/opkg" ] && [ -x /jffs/scripts/'"$SCRIPT_NAME"' ] && /jffs/scripts/'"$SCRIPT_NAME"' startup "$@" & # '"$SCRIPT_NAME"
+				  echo '[ -x "${1}/entware/bin/opkg" ] && [ -x '"$theScriptFilePath"' ] && '"$theScriptFilePath"' startup "$@" & # '"$SCRIPT_NAME"
 				  echo
 				} > /jffs/scripts/post-mount
 				chmod 0755 /jffs/scripts/post-mount
@@ -711,7 +711,6 @@ Auto_Startup()
 			if [ -f /jffs/scripts/services-start ]
 			then
 				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/services-start)"
-
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/services-start
 				fi
@@ -719,7 +718,6 @@ Auto_Startup()
 			if [ -f /jffs/scripts/post-mount ]
 			then
 				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/post-mount)"
-
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/post-mount
 				fi
@@ -728,12 +726,12 @@ Auto_Startup()
 	esac
 }
 
-
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Nov-01] ##
+## Modified by Martinski W. [2025-Jun-20] ##
 ##----------------------------------------##
 Auto_Cron()
 {
+	local theScriptFilePath="/jffs/scripts/$SCRIPT_NAME"
 	case $1 in
 		create)
 			STARTUPLINECOUNTGENERATE="$(cru l | grep -c "${SCRIPT_NAME}_generate")"
@@ -769,17 +767,21 @@ Auto_Cron()
 				STARTUPLINECOUNTFLUSHTODB="$(cru l | grep -c "${SCRIPT_NAME}_flushtodb")"
 			fi
 
-			if [ "$STARTUPLINECOUNTGENERATE" -eq 0 ]; then
-				cru a "${SCRIPT_NAME}_generate" "$defGenrDB_Mins * * * * /jffs/scripts/$SCRIPT_NAME generate"
+			if [ "$STARTUPLINECOUNTGENERATE" -eq 0 ]
+			then
+				cru a "${SCRIPT_NAME}_generate" "$defGenrDB_Mins * * * * $theScriptFilePath generate"
 			fi
-			if [ "$STARTUPLINECOUNTTRIM" -eq 0 ]; then
-				cru a "${SCRIPT_NAME}_trim" "$defTrimDB_Mins $(_TrimDatabaseTime_ hour) * * * /jffs/scripts/$SCRIPT_NAME trimdb"
+			if [ "$STARTUPLINECOUNTTRIM" -eq 0 ]
+			then
+				cru a "${SCRIPT_NAME}_trim" "$defTrimDB_Mins $(_TrimDatabaseTime_ hour) * * * $theScriptFilePath trimdb"
 			fi
-			if [ "$STARTUPLINECOUNTQUERYLOG" -eq 0 ]; then
-				cru a "${SCRIPT_NAME}_querylog" "*/2 * * * * /jffs/scripts/$SCRIPT_NAME querylog"
+			if [ "$STARTUPLINECOUNTQUERYLOG" -eq 0 ]
+			then
+				cru a "${SCRIPT_NAME}_querylog" "*/2 * * * * $theScriptFilePath querylog"
 			fi
-			if [ "$STARTUPLINECOUNTFLUSHTODB" -eq 0 ]; then
-				cru a "${SCRIPT_NAME}_flushtodb" "4-59/5 * * * * /jffs/scripts/$SCRIPT_NAME flushtodb"
+			if [ "$STARTUPLINECOUNTFLUSHTODB" -eq 0 ]
+			then
+				cru a "${SCRIPT_NAME}_flushtodb" "4-59/5 * * * * $theScriptFilePath flushtodb"
 			fi
 		;;
 		delete)
@@ -810,10 +812,11 @@ Auto_DNSMASQ_Postconf()
 		create)
 			if [ -f /jffs/scripts/dnsmasq.postconf ]
 			then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/dnsmasq.postconf)
-				STARTUPLINECOUNTEX=$(grep -cx "/jffs/scripts/$SCRIPT_NAME dnsmasq & # $SCRIPT_NAME" /jffs/scripts/dnsmasq.postconf)
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/dnsmasq.postconf)"
+				STARTUPLINECOUNTEX="$(grep -cx "/jffs/scripts/$SCRIPT_NAME dnsmasq & # $SCRIPT_NAME" /jffs/scripts/dnsmasq.postconf)"
 
-				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }; then
+				if [ "$STARTUPLINECOUNT" -gt 1 ] || { [ "$STARTUPLINECOUNTEX" -eq 0 ] && [ "$STARTUPLINECOUNT" -gt 0 ]; }
+				then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/dnsmasq.postconf
 				fi
 
@@ -830,8 +833,7 @@ Auto_DNSMASQ_Postconf()
 		delete)
 			if [ -f /jffs/scripts/dnsmasq.postconf ]
 			then
-				STARTUPLINECOUNT=$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/dnsmasq.postconf)
-
+				STARTUPLINECOUNT="$(grep -c '# '"$SCRIPT_NAME" /jffs/scripts/dnsmasq.postconf)"
 				if [ "$STARTUPLINECOUNT" -gt 0 ]; then
 					sed -i -e '/# '"$SCRIPT_NAME"'/d' /jffs/scripts/dnsmasq.postconf
 				fi
@@ -868,10 +870,13 @@ _Check_WebGUI_Page_Exists_()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2025-Feb-11] ##
+## Modified by Martinski W. [2025-Jun-20] ##
 ##----------------------------------------##
 Get_WebUI_Page()
 {
+	if [ $# -eq 0 ] || [ -z "$1" ] || [ ! -s "$1" ]
+	then MyWebPage="NONE" ; return 1 ; fi
+
 	local webPageFile  webPagePath
 
 	MyWebPage="$(_Check_WebGUI_Page_Exists_)"
@@ -943,6 +948,7 @@ Get_WebUI_URL()
 Mount_WebUI()
 {
 	Print_Output true "Mounting WebUI tab for $SCRIPT_NAME" "$PASS"
+
 	LOCKFILE=/tmp/addonwebui.lock
 	FD=386
 	eval exec "$FD>$LOCKFILE"
@@ -975,6 +981,7 @@ Mount_WebUI()
 		mount -o bind "$TEMP_MENU_TREE" /www/require/modules/menuTree.js
 	fi
 	flock -u "$FD"
+
 	Print_Output true "Mounted $SCRIPT_NAME WebUI page as $MyWebPage" "$PASS"
 }
 
@@ -1403,6 +1410,12 @@ _GetAvailableRAM_()
 }
 
 ##-------------------------------------##
+## Added by Martinski W. [2025-Jun-19] ##
+##-------------------------------------##
+_EscapeChars_()
+{ printf "%s" "$1" | sed 's/[][\/$.*^&-]/\\&/g' ; }
+
+##-------------------------------------##
 ## Added by Martinski W. [2025-Feb-08] ##
 ##-------------------------------------##
 _WriteVarDefToJSFile_()
@@ -1410,10 +1423,13 @@ _WriteVarDefToJSFile_()
    if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]
    then return 1; fi
 
-   local varValue
+   local varValue  sedValue
    if [ $# -eq 3 ] && [ "$3" = "true" ]
-   then varValue="$2"
-   else varValue="'${2}'"
+   then
+       varValue="$2"
+   else
+       varValue="'${2}'"
+       sedValue="$(_EscapeChars_ "$varValue")"
    fi
 
    local targetJSfile="$SCRIPT_USB_DIR/SQLData.js"
@@ -1425,9 +1441,9 @@ _WriteVarDefToJSFile_()
    then
        sed -i "1 i var $1 = ${varValue};" "$targetJSfile"
    elif
-      ! grep -q "^var $1 = ${varValue};" "$targetJSfile"
+      ! grep -q "^var $1 = ${sedValue};" "$targetJSfile"
    then
-       sed -i "s/^var $1 =.*/var $1 = ${varValue};/" "$targetJSfile"
+       sed -i "s/^var $1 =.*/var $1 = ${sedValue};/" "$targetJSfile"
    fi
 }
 
@@ -2281,8 +2297,14 @@ _SQLGetDBLogTimeStamp_()
 { printf "[$(date +"$sqlDBLogDateTime")]" ; }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2025-Jun-05] ##
+## Modified by Martinski W. [2025-Jun-21] ##
 ##----------------------------------------##
+readonly errorMsgsRegExp="Parse error|Runtime error|Error:"
+readonly corruptedBinExp="Illegal instruction|SQLite header and source version mismatch"
+readonly sqlErrorsRegExp="($errorMsgsRegExp|$corruptedBinExp)"
+readonly sqlLockedRegExp="(Parse|Runtime) error .*: database is locked"
+readonly sqlCorruptedMsg="SQLite3 binary is likely corrupted. Remove and reinstall the Entware package."
+##-----------------------------------------------------------------------
 _ApplyDatabaseSQLCmds_()
 {
     local errorCount=0  maxErrorCount=3  callFlag
@@ -2308,17 +2330,23 @@ _ApplyDatabaseSQLCmds_()
         fi
         sqlErrorMsg="$(cat "$tempLogFilePath")"
 
-        if echo "$sqlErrorMsg" | grep -qE "^(Parse error|Runtime error|Error:|Illegal instruction)"
+        if echo "$sqlErrorMsg" | grep -qE "^$sqlErrorsRegExp"
         then
-            if echo "$sqlErrorMsg" | grep -qE "^(Parse|Runtime) error .*: database is locked"
+            if echo "$sqlErrorMsg" | grep -qE "^$sqlLockedRegExp"
             then
                 foundLocked=true ; maxTriesCount=25
                 echo -n > "$tempLogFilePath"  ##Clear for next error found##
                 sleep 2 ; continue
             fi
+            if echo "$sqlErrorMsg" | grep -qE "^($corruptedBinExp)"
+            then  ## Corrupted SQLite3 Binary?? ##
+                errorCount="$maxErrorCount"
+                echo "$sqlCorruptedMsg" >> "$tempLogFilePath"
+                Print_Output true "SQLite3 Fatal Error[$callFlag]: $sqlCorruptedMsg" "$CRIT"
+            fi
             errorCount="$((errorCount + 1))"
             foundError=true ; foundLocked=false
-            Print_Output true "SQLite3 failure[$callFlag]: $sqlErrorMsg" "$ERR"
+            Print_Output true "SQLite3 Failure[$callFlag]: $sqlErrorMsg" "$ERR"
         fi
 
         if ! "$debgLogSQLcmds"
@@ -2362,7 +2390,7 @@ _ApplyDatabaseSQLCmds_()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2025-Jun-05] ##
+## Modified by Martinski W. [2025-Jun-21] ##
 ##----------------------------------------##
 _ApplyDatabaseSQLCmdsForTrim_()
 {
@@ -2389,18 +2417,25 @@ _ApplyDatabaseSQLCmdsForTrim_()
 
         echo "-----------------------------------" >> "$tempLogFilePath"
         printf "$(_SQLGetDBLogTimeStamp_) TRY_COUNT=[$triesCount]\n" | tee -a "$tempLogFilePath"
-        if echo "$sqlErrorMsg" | grep -qE "^(Parse error|Runtime error|Error:|Illegal instruction)"
+        if echo "$sqlErrorMsg" | grep -qE "^$sqlErrorsRegExp"
         then
-            if echo "$sqlErrorMsg" | grep -qE "^(Parse|Runtime) error .*: database is locked"
+            if echo "$sqlErrorMsg" | grep -qE "^$sqlLockedRegExp"
             then
                 foundLocked=true ; maxTriesCount=25
                 cat "$tempLogFilePath" >> "$trimLOGFilePath"
                 echo -n > "$tempLogFilePath"  ##Clear for next error found##
                 sleep 2 ; continue
             fi
+            if echo "$sqlErrorMsg" | grep -qE "^($corruptedBinExp)"
+            then  ## Corrupted SQLite3 Binary?? ##
+                errorCount="$maxErrorCount"
+                echo "$sqlCorruptedMsg" >> "$tempLogFilePath"
+                Print_Output true "SQLite3 Fatal Error[$callFlag]: $sqlCorruptedMsg" "$CRIT"
+            fi
             errorCount="$((errorCount + 1))"
             foundError=true ; foundLocked=false
-            Print_Output true "SQLite3 failure[$callFlag]: $sqlErrorMsg" "$ERR"
+            Print_Output true "SQLite3 Failure[$callFlag]: $sqlErrorMsg" "$ERR"
+
             cat "$tempLogFilePath" >> "$trimLOGFilePath"
             echo -n > "$tempLogFilePath"  ##Clear for next error found##
         fi
@@ -3089,14 +3124,13 @@ Menu_Install()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Dec-21] ##
+## Modified by Martinski W. [2025-Jun-20] ##
 ##----------------------------------------##
 Menu_Startup()
 {
 	Create_Dirs
 	Conf_Exists
 	Create_Symlinks
-	NTP_Ready
 
 	if [ $# -eq 0 ] || [ -z "$1" ]
 	then
@@ -3111,15 +3145,17 @@ Menu_Startup()
 			    Print_Output true "$1 does NOT contain Entware, not starting $SCRIPT_NAME" "$CRIT"
 			    exit 1
 			else
-			    Print_Output true "$1 does NOT contain Entware, starting $SCRIPT_NAME with extremely limited functionality." "$ERR"
+			    Print_Output true "$1 does NOT contain Entware, starting $SCRIPT_NAME $SCRIPT_VERSION with extremely limited functionality." "$ERR"
 			fi
 		else
-			Print_Output true "$1 contains Entware, starting $SCRIPT_NAME" "$PASS"
+			Print_Output true "$1 contains Entware, $SCRIPT_NAME $SCRIPT_VERSION starting up" "$PASS"
 		fi
 	fi
 
+	NTP_Ready
 	Check_Lock
 	[ "$1" != "force" ] && sleep 20
+
 	Auto_Startup create 2>/dev/null
 	Auto_DNSMASQ_Postconf create 2>/dev/null
 	if "$dbBackgProcsEnabled"
