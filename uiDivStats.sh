@@ -13,7 +13,7 @@
 ##       Forked from https://github.com/jackyaz/uiDivStats       ##
 ##                                                               ##
 ###################################################################
-# Last Modified: 2025-Jun-21
+# Last Modified: 2025-Jul-20
 #------------------------------------------------------------------
 
 #################        Shellcheck directives      ###############
@@ -35,8 +35,8 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="uiDivStats"
-readonly SCRIPT_VERSION="v4.0.11"
-readonly SCRIPT_VERSTAG="25062121"
+readonly SCRIPT_VERSION="v4.0.12"
+readonly SCRIPT_VERSTAG="25072023"
 SCRIPT_BRANCH="develop"
 SCRIPT_REPO="https://raw.githubusercontent.com/AMTM-OSR/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -68,7 +68,8 @@ readonly trimTMPOldsFile="${SCRIPT_USB_DIR}/uiDivStats_Olds.TMP"
 readonly scriptVersRegExp="v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})"
 readonly webPageFileRegExp="user([1-9]|[1-2][0-9])[.]asp"
 readonly webPageLineRegExp="\{url: \"$webPageFileRegExp\", tabName: \"$SCRIPT_NAME\"\}"
-readonly scriptVERINFO="[${SCRIPT_VERSION}_${SCRIPT_VERSTAG}, Branch: $SCRIPT_BRANCH]"
+readonly branchx_TAG="Branch: $SCRIPT_BRANCH"
+readonly version_TAG="${SCRIPT_VERSION}_${SCRIPT_VERSTAG}"
 
 readonly oneKByte=1024
 readonly oneMByte=1048576
@@ -99,6 +100,7 @@ readonly CLEARFORMAT="\\e[0m"
 readonly CLRct="\033[0m"
 readonly REDct="\033[1;31m"
 readonly GRNct="\033[1;32m"
+readonly MGNTct="\e[1;35m"
 readonly CritIREDct="\e[41m"
 readonly CritBREDct="\e[30;101m"
 readonly PassBGRNct="\e[30;102m"
@@ -956,7 +958,7 @@ Mount_WebUI()
 	Get_WebUI_Page "$SCRIPT_DIR/uidivstats_www.asp"
 	if [ "$MyWebPage" = "NONE" ]
 	then
-		Print_Output true "**ERROR** Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
+		Print_Output true "**ERROR** Unable to mount $SCRIPT_NAME WebUI page." "$CRIT"
 		Clear_Lock
 		exit 1
 	fi
@@ -2297,7 +2299,7 @@ _SQLGetDBLogTimeStamp_()
 { printf "[$(date +"$sqlDBLogDateTime")]" ; }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2025-Jun-21] ##
+## Modified by Martinski W. [2025-Jul-20] ##
 ##----------------------------------------##
 readonly errorMsgsRegExp="Parse error|Runtime error|Error:"
 readonly corruptedBinExp="Illegal instruction|SQLite header and source version mismatch"
@@ -2385,7 +2387,7 @@ _ApplyDatabaseSQLCmds_()
     fi
     if "$foundError" || "$foundLocked"
     then
-        Print_Output true "SQLite process ${resultStr}" "$ERR"
+        Print_Output true "SQLite process[$callFlag] ${resultStr}" "$ERR"
     fi
 }
 
@@ -3450,8 +3452,8 @@ Entware_Ready()
 ##----------------------------------------##
 Show_About()
 {
+	printf "About ${MGNTct}${SCRIPT_VERS_INFO}${CLRct}\n"
 	cat <<EOF
-About $SCRIPT_VERS_INFO
   $SCRIPT_NAME provides a graphical representation of domain
   blocking performed by Diversion.
 
@@ -3474,8 +3476,8 @@ EOF
 ##----------------------------------------##
 Show_Help()
 {
+	printf "HELP ${MGNTct}${SCRIPT_VERS_INFO}${CLRct}\n"
 	cat <<EOF
-HELP $SCRIPT_VERS_INFO
 Available commands:
   $SCRIPT_NAME about            explains functionality
   $SCRIPT_NAME update           checks for updates
@@ -3490,8 +3492,8 @@ Available commands:
   $SCRIPT_NAME trimdb           run maintenance on database (this runs automatically every night)
   $SCRIPT_NAME enableprocs      re-enable background processing of Diversion statistics
   $SCRIPT_NAME disableprocs     disable background processing of Diversion statistics
-  $SCRIPT_NAME develop          switch to development branch
-  $SCRIPT_NAME stable           switch to stable branch
+  $SCRIPT_NAME develop          switch to development branch version
+  $SCRIPT_NAME stable           switch to stable/production branch version
 EOF
 	printf "\n"
 }
@@ -3509,9 +3511,9 @@ else sqlDBLogFilePath="/tmp/var/tmp/$sqlDBLogFileName"
 fi
 _SQLCheckDBLogFileSize_
 
-if [ "$SCRIPT_BRANCH" != "develop" ]
-then SCRIPT_VERS_INFO=""
-else SCRIPT_VERS_INFO="$scriptVERINFO"
+if [ "$SCRIPT_BRANCH" = "master" ]
+then SCRIPT_VERS_INFO="[$branchx_TAG]"
+else SCRIPT_VERS_INFO="[$version_TAG, $branchx_TAG]"
 fi
 
 dbBackgProcsEnabled="$(_ToggleBackgroundProcsEnabled_ check)"
