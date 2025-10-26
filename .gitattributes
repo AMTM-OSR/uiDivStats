@@ -1,8 +1,14 @@
-*.tar.gz binary
+* text eol=lf
 *.sh text eol=lf
-*.awk text eol=lf
 *.md text eol=lf
 *.asp text eol=lf
 *.js text eol=lf
 *.css text eol=lf
 *.md5 text eol=lf
+*.awk text eol=lf
+*.gz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.zip binary
+*.tar.gz binary

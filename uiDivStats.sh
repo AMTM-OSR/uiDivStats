@@ -13,7 +13,7 @@
 ##       Forked from https://github.com/jackyaz/uiDivStats       ##
 ##                                                               ##
 ###################################################################
-# Last Modified: 2025-Jul-27
+# Last Modified: 2025-Oct-25
 #------------------------------------------------------------------
 
 #################        Shellcheck directives      ###############
@@ -36,7 +36,7 @@
 ### Start of script variables ###
 readonly SCRIPT_NAME="uiDivStats"
 readonly SCRIPT_VERSION="v4.0.12"
-readonly SCRIPT_VERSTAG="25072723"
+readonly SCRIPT_VERSTAG="25102522"
 SCRIPT_BRANCH="develop"
 SCRIPT_REPO="https://raw.githubusercontent.com/AMTM-OSR/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -68,8 +68,9 @@ readonly trimTMPOldsFile="${SCRIPT_USB_DIR}/uiDivStats_Olds.TMP"
 readonly scriptVersRegExp="v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})"
 readonly webPageFileRegExp="user([1-9]|[1-2][0-9])[.]asp"
 readonly webPageLineRegExp="\{url: \"$webPageFileRegExp\", tabName: \"$SCRIPT_NAME\"\}"
-readonly branchx_TAG="Branch: $SCRIPT_BRANCH"
-readonly version_TAG="${SCRIPT_VERSION}_${SCRIPT_VERSTAG}"
+readonly branchxStr_TAG="[Branch: $SCRIPT_BRANCH]"
+readonly versionDev_TAG="${SCRIPT_VERSION}_${SCRIPT_VERSTAG}"
+readonly versionMod_TAG="$SCRIPT_VERSION on $ROUTER_MODEL"
 
 readonly oneKByte=1024
 readonly oneMByte=1048576
@@ -2754,26 +2755,55 @@ _WaitForYESorNO_()
    fi
 }
 
+##-------------------------------------##
+## Added by Martinski W. [2025-Oct-25] ##
+##-------------------------------------##
+_CenterTextStr_()
+{
+    if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] || \
+       ! echo "$2" | grep -qE "^[1-9][0-9]+$"
+    then echo ; return 1
+    fi
+    local stringLen="${#1}"
+    local space1Len="$((($2 - stringLen)/2))"
+    local space2Len="$space1Len"
+    local totalLen="$((space1Len + stringLen + space2Len))"
+
+    if [ "$totalLen" -lt "$2" ]
+    then space2Len="$((space2Len + 1))"
+    elif [ "$totalLen" -gt "$2" ]
+    then space1Len="$((space1Len - 1))"
+    fi
+    if [ "$space1Len" -gt 0 ] && [ "$space2Len" -gt 0 ]
+    then printf "%*s%s%*s" "$space1Len" '' "$1" "$space2Len" ''
+    else printf "%s" "$1"
+    fi
+}
+
+##----------------------------------------##
+## Modified by Martinski W. [2025-Oct-25] ##
+##----------------------------------------##
 ScriptHeader()
 {
 	clear
-	printf "\\n"
-	printf "${BOLD}###################################################################${CLEARFORMAT}\\n"
-	printf "${BOLD}##                                                               ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##           _  _____   _          _____  _          _           ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##          (_)|  __ \ (_)        / ____|| |        | |          ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##    _   _  _ | |  | | _ __   __| (___  | |_  __ _ | |_  ___    ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##   | | | || || |  | || |\ \ / / \___ \ | __|/ _  || __|/ __|   ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##   | |_| || || |__| || | \ V /  ____) || |_| (_| || |_ \__ \   ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##    \__,_||_||_____/ |_|  \_/  |_____/  \__|\__,_| \__||___/   ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##                                                               ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##                   %9s on %-18s             ##${CLEARFORMAT}\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
-	printf "${BOLD}##                                                               ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##            https://github.com/AMTM-OSR/uiDivStats             ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##       Forked from https://github.com/jackyaz/uiDivStats       ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##                                                               ##${CLEARFORMAT}\\n"
-	printf "${BOLD}###################################################################${CLEARFORMAT}\\n"
-	printf "\\n"
+	local spaceLen=61  colorCT
+	[ "$SCRIPT_BRANCH" = "master" ] && colorCT="$GRNct" || colorCT="$MGNTct"
+	echo
+	printf "${BOLD}###################################################################${CLRct}\n"
+	printf "${BOLD}##           _  _____   _          _____  _          _           ##${CLRct}\n"
+	printf "${BOLD}##          (_)|  __ \ (_)        / ____|| |        | |          ##${CLRct}\n"
+	printf "${BOLD}##    _   _  _ | |  | | _ __   __| (___  | |_  __ _ | |_  ___    ##${CLRct}\n"
+	printf "${BOLD}##   | | | || || |  | || |\ \ / / \___ \ | __|/ _  || __|/ __|   ##${CLRct}\n"
+	printf "${BOLD}##   | |_| || || |__| || | \ V /  ____) || |_| (_| || |_ \__ \   ##${CLRct}\n"
+	printf "${BOLD}##    \__,_||_||_____/ |_|  \_/  |_____/  \__|\__,_| \__||___/   ##${CLRct}\n"
+	printf "${BOLD}##                                                               ##${CLRct}\n"
+	printf "${BOLD}## ${GRNct}%s${CLRct}${BOLD} ##${CLRct}\n" "$(_CenterTextStr_ "$versionMod_TAG" "$spaceLen")"
+	printf "${BOLD}## ${colorCT}%s${CLRct}${BOLD} ##${CLRct}\n" "$(_CenterTextStr_ "$branchxStr_TAG" "$spaceLen")"
+	printf "${BOLD}##                                                               ##${CLRct}\n"
+	printf "${BOLD}##            https://github.com/AMTM-OSR/uiDivStats             ##${CLRct}\n"
+	printf "${BOLD}##       Forked from https://github.com/jackyaz/uiDivStats       ##${CLRct}\n"
+	printf "${BOLD}##                                                               ##${CLRct}\n"
+	printf "${BOLD}###################################################################${CLRct}\n\n"
 }
 
 ##----------------------------------------##
@@ -3167,6 +3197,7 @@ Menu_Startup()
 		Auto_Cron delete 2>/dev/null
 		/opt/etc/init.d/S90taildns stop >/dev/null 2>&1
 	fi
+	Set_Version_Custom_Settings local "$SCRIPT_VERSION"
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	Mount_WebUI
@@ -3524,8 +3555,8 @@ fi
 _SQLCheckDBLogFileSize_
 
 if [ "$SCRIPT_BRANCH" = "master" ]
-then SCRIPT_VERS_INFO="[$branchx_TAG]"
-else SCRIPT_VERS_INFO="[$version_TAG, $branchx_TAG]"
+then SCRIPT_VERS_INFO=""
+else SCRIPT_VERS_INFO="[$versionDev_TAG]"
 fi
 
 dbBackgProcsEnabled="$(_ToggleBackgroundProcsEnabled_ check)"
@@ -3555,6 +3586,7 @@ then
 		Auto_Cron delete 2>/dev/null
 		/opt/etc/init.d/S90taildns stop >/dev/null 2>&1
 	fi
+	Set_Version_Custom_Settings local "$SCRIPT_VERSION"
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	_CheckFor_WebGUI_Page_
@@ -3573,7 +3605,8 @@ case "$1" in
 		exit 0
 	;;
 	startup)
-		Menu_Startup "$2"
+		shift
+		Menu_Startup "$@"
 		exit 0
 	;;
 	generate)
