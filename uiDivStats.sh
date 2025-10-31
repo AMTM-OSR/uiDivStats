@@ -13,7 +13,7 @@
 ##       Forked from https://github.com/jackyaz/uiDivStats       ##
 ##                                                               ##
 ###################################################################
-# Last Modified: 2025-Oct-25
+# Last Modified: 2025-Oct-30
 #------------------------------------------------------------------
 
 #################        Shellcheck directives      ###############
@@ -36,7 +36,7 @@
 ### Start of script variables ###
 readonly SCRIPT_NAME="uiDivStats"
 readonly SCRIPT_VERSION="v4.0.12"
-readonly SCRIPT_VERSTAG="25102522"
+readonly SCRIPT_VERSTAG="25103020"
 SCRIPT_BRANCH="develop"
 SCRIPT_REPO="https://raw.githubusercontent.com/AMTM-OSR/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
