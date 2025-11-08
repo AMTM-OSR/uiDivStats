@@ -13,7 +13,7 @@
 ##       Forked from https://github.com/jackyaz/uiDivStats       ##
 ##                                                               ##
 ###################################################################
-# Last Modified: 2025-Jun-21
+# Last Modified: 2025-Nov-04
 #------------------------------------------------------------------
 
 #################        Shellcheck directives      ###############
@@ -35,9 +35,9 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="uiDivStats"
-readonly SCRIPT_VERSION="v4.0.11"
-readonly SCRIPT_VERSTAG="25062121"
-SCRIPT_BRANCH="master"
+readonly SCRIPT_VERSION="v4.0.12"
+readonly SCRIPT_VERSTAG="25110422"
+SCRIPT_BRANCH="develop"
 SCRIPT_REPO="https://raw.githubusercontent.com/AMTM-OSR/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly SCRIPT_CONF="$SCRIPT_DIR/config"
@@ -68,7 +68,9 @@ readonly trimTMPOldsFile="${SCRIPT_USB_DIR}/uiDivStats_Olds.TMP"
 readonly scriptVersRegExp="v[0-9]{1,2}([.][0-9]{1,2})([.][0-9]{1,2})"
 readonly webPageFileRegExp="user([1-9]|[1-2][0-9])[.]asp"
 readonly webPageLineRegExp="\{url: \"$webPageFileRegExp\", tabName: \"$SCRIPT_NAME\"\}"
-readonly scriptVERINFO="[${SCRIPT_VERSION}_${SCRIPT_VERSTAG}, Branch: $SCRIPT_BRANCH]"
+readonly branchxStr_TAG="[Branch: $SCRIPT_BRANCH]"
+readonly versionDev_TAG="${SCRIPT_VERSION}_${SCRIPT_VERSTAG}"
+readonly versionMod_TAG="$SCRIPT_VERSION on $ROUTER_MODEL"
 
 readonly oneKByte=1024
 readonly oneMByte=1048576
@@ -99,6 +101,7 @@ readonly CLEARFORMAT="\\e[0m"
 readonly CLRct="\033[0m"
 readonly REDct="\033[1;31m"
 readonly GRNct="\033[1;32m"
+readonly MGNTct="\e[1;35m"
 readonly CritIREDct="\e[41m"
 readonly CritBREDct="\e[30;101m"
 readonly PassBGRNct="\e[30;102m"
@@ -129,7 +132,7 @@ Print_Output()
 		    "$PASS") prioNum=6 ;; #INFO#
 		          *) prioNum=5 ;; #NOTICE#
 		esac
-		logger -t "$SCRIPT_NAME" -p $prioNum "$2"
+		logger -t "${SCRIPT_NAME}_[$$]" -p $prioNum "$2"
 	fi
 	printf "${BOLD}${3}%s${CLEARFORMAT}\n\n" "$2"
 }
@@ -956,7 +959,7 @@ Mount_WebUI()
 	Get_WebUI_Page "$SCRIPT_DIR/uidivstats_www.asp"
 	if [ "$MyWebPage" = "NONE" ]
 	then
-		Print_Output true "**ERROR** Unable to mount $SCRIPT_NAME WebUI page, exiting" "$CRIT"
+		Print_Output true "**ERROR** Unable to mount $SCRIPT_NAME WebUI page." "$CRIT"
 		Clear_Lock
 		exit 1
 	fi
@@ -2297,7 +2300,7 @@ _SQLGetDBLogTimeStamp_()
 { printf "[$(date +"$sqlDBLogDateTime")]" ; }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2025-Jun-21] ##
+## Modified by Martinski W. [2025-Jul-20] ##
 ##----------------------------------------##
 readonly errorMsgsRegExp="Parse error|Runtime error|Error:"
 readonly corruptedBinExp="Illegal instruction|SQLite header and source version mismatch"
@@ -2385,7 +2388,7 @@ _ApplyDatabaseSQLCmds_()
     fi
     if "$foundError" || "$foundLocked"
     then
-        Print_Output true "SQLite process ${resultStr}" "$ERR"
+        Print_Output true "SQLite process[$callFlag] ${resultStr}" "$ERR"
     fi
 }
 
@@ -2752,26 +2755,55 @@ _WaitForYESorNO_()
    fi
 }
 
+##-------------------------------------##
+## Added by Martinski W. [2025-Oct-25] ##
+##-------------------------------------##
+_CenterTextStr_()
+{
+    if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] || \
+       ! echo "$2" | grep -qE "^[1-9][0-9]+$"
+    then echo ; return 1
+    fi
+    local stringLen="${#1}"
+    local space1Len="$((($2 - stringLen)/2))"
+    local space2Len="$space1Len"
+    local totalLen="$((space1Len + stringLen + space2Len))"
+
+    if [ "$totalLen" -lt "$2" ]
+    then space2Len="$((space2Len + 1))"
+    elif [ "$totalLen" -gt "$2" ]
+    then space1Len="$((space1Len - 1))"
+    fi
+    if [ "$space1Len" -gt 0 ] && [ "$space2Len" -gt 0 ]
+    then printf "%*s%s%*s" "$space1Len" '' "$1" "$space2Len" ''
+    else printf "%s" "$1"
+    fi
+}
+
+##----------------------------------------##
+## Modified by Martinski W. [2025-Oct-25] ##
+##----------------------------------------##
 ScriptHeader()
 {
 	clear
-	printf "\\n"
-	printf "${BOLD}###################################################################${CLEARFORMAT}\\n"
-	printf "${BOLD}##                                                               ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##           _  _____   _          _____  _          _           ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##          (_)|  __ \ (_)        / ____|| |        | |          ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##    _   _  _ | |  | | _ __   __| (___  | |_  __ _ | |_  ___    ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##   | | | || || |  | || |\ \ / / \___ \ | __|/ _  || __|/ __|   ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##   | |_| || || |__| || | \ V /  ____) || |_| (_| || |_ \__ \   ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##    \__,_||_||_____/ |_|  \_/  |_____/  \__|\__,_| \__||___/   ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##                                                               ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##                   %9s on %-18s             ##${CLEARFORMAT}\n" "$SCRIPT_VERSION" "$ROUTER_MODEL"
-	printf "${BOLD}##                                                               ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##            https://github.com/AMTM-OSR/uiDivStats             ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##       Forked from https://github.com/jackyaz/uiDivStats       ##${CLEARFORMAT}\\n"
-	printf "${BOLD}##                                                               ##${CLEARFORMAT}\\n"
-	printf "${BOLD}###################################################################${CLEARFORMAT}\\n"
-	printf "\\n"
+	local spaceLen=61  colorCT
+	[ "$SCRIPT_BRANCH" = "master" ] && colorCT="$GRNct" || colorCT="$MGNTct"
+	echo
+	printf "${BOLD}###################################################################${CLRct}\n"
+	printf "${BOLD}##           _  _____   _          _____  _          _           ##${CLRct}\n"
+	printf "${BOLD}##          (_)|  __ \ (_)        / ____|| |        | |          ##${CLRct}\n"
+	printf "${BOLD}##    _   _  _ | |  | | _ __   __| (___  | |_  __ _ | |_  ___    ##${CLRct}\n"
+	printf "${BOLD}##   | | | || || |  | || |\ \ / / \___ \ | __|/ _  || __|/ __|   ##${CLRct}\n"
+	printf "${BOLD}##   | |_| || || |__| || | \ V /  ____) || |_| (_| || |_ \__ \   ##${CLRct}\n"
+	printf "${BOLD}##    \__,_||_||_____/ |_|  \_/  |_____/  \__|\__,_| \__||___/   ##${CLRct}\n"
+	printf "${BOLD}##                                                               ##${CLRct}\n"
+	printf "${BOLD}## ${GRNct}%s${CLRct}${BOLD} ##${CLRct}\n" "$(_CenterTextStr_ "$versionMod_TAG" "$spaceLen")"
+	printf "${BOLD}## ${colorCT}%s${CLRct}${BOLD} ##${CLRct}\n" "$(_CenterTextStr_ "$branchxStr_TAG" "$spaceLen")"
+	printf "${BOLD}##                                                               ##${CLRct}\n"
+	printf "${BOLD}##            https://github.com/AMTM-OSR/uiDivStats             ##${CLRct}\n"
+	printf "${BOLD}##       Forked from https://github.com/jackyaz/uiDivStats       ##${CLRct}\n"
+	printf "${BOLD}##                                                               ##${CLRct}\n"
+	printf "${BOLD}###################################################################${CLRct}\n\n"
 }
 
 ##----------------------------------------##
@@ -3165,6 +3197,7 @@ Menu_Startup()
 		Auto_Cron delete 2>/dev/null
 		/opt/etc/init.d/S90taildns stop >/dev/null 2>&1
 	fi
+	Set_Version_Custom_Settings local "$SCRIPT_VERSION"
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	Mount_WebUI
@@ -3373,25 +3406,36 @@ Menu_Uninstall()
 	Print_Output true "Uninstall completed" "$PASS"
 }
 
+##----------------------------------------##
+## Modified by Martinski W. [2025-Jul-27] ##
+##----------------------------------------##
 NTP_Ready()
 {
+	local theSleepDelay=15  ntpMaxWaitSecs=600  ntpWaitSecs
+
 	if [ "$(nvram get ntp_ready)" -eq 0 ]
 	then
 		Check_Lock
-		ntpwaitcount=0
-		while [ "$(nvram get ntp_ready)" -eq 0 ] && [ "$ntpwaitcount" -lt 600 ]
+		ntpWaitSecs=0
+		Print_Output true "Waiting for NTP to sync..." "$WARN"
+
+		while [ "$(nvram get ntp_ready)" -eq 0 ] && [ "$ntpWaitSecs" -lt "$ntpMaxWaitSecs" ]
 		do
-			ntpwaitcount="$((ntpwaitcount + 30))"
-			Print_Output true "Waiting for NTP to sync..." "$WARN"
-			sleep 30
+			if [ "$ntpWaitSecs" -gt 0 ] && [ "$((ntpWaitSecs % 30))" -eq 0 ]
+			then
+			    Print_Output true "Waiting for NTP to sync [$ntpWaitSecs secs]..." "$WARN"
+			fi
+			sleep "$theSleepDelay"
+			ntpWaitSecs="$((ntpWaitSecs + theSleepDelay))"
 		done
-		if [ "$ntpwaitcount" -ge 600 ]
+
+		if [ "$ntpWaitSecs" -ge "$ntpMaxWaitSecs" ]
 		then
 			Print_Output true "NTP failed to sync after 10 minutes. Please resolve!" "$CRIT"
 			Clear_Lock
 			exit 1
 		else
-			Print_Output true "NTP synced, $SCRIPT_NAME will now continue" "$PASS"
+			Print_Output true "NTP has synced [$ntpWaitSecs secs]. $SCRIPT_NAME will now continue." "$PASS"
 			Clear_Lock
 		fi
 	fi
@@ -3403,7 +3447,7 @@ NTP_Ready()
 ##----------------------------------------##
 Entware_Ready()
 {
-	local theSleepDelay=5  maxSleepTimer=100  sleepTimerSecs
+	local theSleepDelay=5  maxSleepTimer=120  sleepTimerSecs
     local doExitNotFound=true
 
 	if [ $# -eq 1 ] && [ "$1" = "false" ]
@@ -3422,11 +3466,12 @@ Entware_Ready()
 		do
 			if [ "$((sleepTimerSecs % 10))" -eq 0 ]
 			then
-			    Print_Output true "Entware NOT found, sleeping for $theSleepDelay secs [$sleepTimerSecs secs]..." "$WARN"
+			    Print_Output true "Entware NOT found. Wait for Entware to be ready [$sleepTimerSecs secs]..." "$WARN"
 			fi
 			sleep "$theSleepDelay"
 			sleepTimerSecs="$((sleepTimerSecs + theSleepDelay))"
 		done
+
 		if [ ! -f /opt/bin/opkg ]
 		then
 			if "$doExitNotFound"
@@ -3438,7 +3483,7 @@ Entware_Ready()
 			    Clear_Lock ; return 1
 			fi
 		else
-			Print_Output true "Entware found, $SCRIPT_NAME will now continue" "$PASS"
+			Print_Output true "Entware found [$sleepTimerSecs secs]. $SCRIPT_NAME will now continue." "$PASS"
 			Clear_Lock
 		fi
 	fi
@@ -3450,8 +3495,8 @@ Entware_Ready()
 ##----------------------------------------##
 Show_About()
 {
+	printf "About ${MGNTct}${SCRIPT_VERS_INFO}${CLRct}\n"
 	cat <<EOF
-About $SCRIPT_VERS_INFO
   $SCRIPT_NAME provides a graphical representation of domain
   blocking performed by Diversion.
 
@@ -3474,8 +3519,8 @@ EOF
 ##----------------------------------------##
 Show_Help()
 {
+	printf "HELP ${MGNTct}${SCRIPT_VERS_INFO}${CLRct}\n"
 	cat <<EOF
-HELP $SCRIPT_VERS_INFO
 Available commands:
   $SCRIPT_NAME about            explains functionality
   $SCRIPT_NAME update           checks for updates
@@ -3490,8 +3535,8 @@ Available commands:
   $SCRIPT_NAME trimdb           run maintenance on database (this runs automatically every night)
   $SCRIPT_NAME enableprocs      re-enable background processing of Diversion statistics
   $SCRIPT_NAME disableprocs     disable background processing of Diversion statistics
-  $SCRIPT_NAME develop          switch to development branch
-  $SCRIPT_NAME stable           switch to stable branch
+  $SCRIPT_NAME develop          switch to development branch version
+  $SCRIPT_NAME stable           switch to stable/production branch version
 EOF
 	printf "\n"
 }
@@ -3509,9 +3554,9 @@ else sqlDBLogFilePath="/tmp/var/tmp/$sqlDBLogFileName"
 fi
 _SQLCheckDBLogFileSize_
 
-if [ "$SCRIPT_BRANCH" != "develop" ]
+if [ "$SCRIPT_BRANCH" = "master" ]
 then SCRIPT_VERS_INFO=""
-else SCRIPT_VERS_INFO="$scriptVERINFO"
+else SCRIPT_VERS_INFO="[$versionDev_TAG]"
 fi
 
 dbBackgProcsEnabled="$(_ToggleBackgroundProcsEnabled_ check)"
@@ -3541,6 +3586,7 @@ then
 		Auto_Cron delete 2>/dev/null
 		/opt/etc/init.d/S90taildns stop >/dev/null 2>&1
 	fi
+	Set_Version_Custom_Settings local "$SCRIPT_VERSION"
 	Auto_ServiceEvent create 2>/dev/null
 	Shortcut_Script create
 	_CheckFor_WebGUI_Page_
@@ -3559,7 +3605,8 @@ case "$1" in
 		exit 0
 	;;
 	startup)
-		Menu_Startup "$2"
+		shift
+		Menu_Startup "$@"
 		exit 0
 	;;
 	generate)
