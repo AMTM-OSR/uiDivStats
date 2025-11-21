@@ -13,7 +13,7 @@
 ##       Forked from https://github.com/jackyaz/uiDivStats       ##
 ##                                                               ##
 ###################################################################
-# Last Modified: 2025-Nov-04
+# Last Modified: 2025-Nov-16
 #------------------------------------------------------------------
 
 #################        Shellcheck directives      ###############
@@ -35,9 +35,9 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="uiDivStats"
-readonly SCRIPT_VERSION="v4.0.12"
-readonly SCRIPT_VERSTAG="25110422"
-SCRIPT_BRANCH="master"
+readonly SCRIPT_VERSION="v4.0.13"
+readonly SCRIPT_VERSTAG="25111620"
+SCRIPT_BRANCH="develop"
 SCRIPT_REPO="https://raw.githubusercontent.com/AMTM-OSR/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
 readonly SCRIPT_CONF="$SCRIPT_DIR/config"
@@ -443,7 +443,7 @@ Update_File()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2025-Jan-18] ##
+## Modified by Martinski W. [2025-Nov-15] ##
 ##----------------------------------------##
 Conf_FromSettings()
 {
@@ -479,10 +479,10 @@ Conf_FromSettings()
 			rm -f "$TMPFILE"
 			rm -f "${SETTINGSFILE}.bak"
 
-			if diff "$SCRIPT_CONF" "${SCRIPT_CONF}.bak" | grep -q "QUERYMODE="
+			if diff -U0 "$SCRIPT_CONF" "${SCRIPT_CONF}.bak" | grep -q "QUERYMODE="
 			then QueryMode "$(QueryMode check)"
 			fi
-			if diff "$SCRIPT_CONF" "${SCRIPT_CONF}.bak" | grep -q "CACHEMODE="
+			if diff -U0 "$SCRIPT_CONF" "${SCRIPT_CONF}.bak" | grep -q "CACHEMODE="
 			then CacheMode "$(CacheMode check)"
 			fi
 			Print_Output true "Merge of updated settings from WebUI completed successfully" "$PASS"
