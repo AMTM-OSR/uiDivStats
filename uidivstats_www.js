@@ -1,3 +1,7 @@
+/**----------------------------**/
+/** Last Modified: 2026-Jan-18 **/
+/**----------------------------**/
+
 var maxNoChartsBlocked = 6;
 var currentNoChartsBlocked = 0;
 var maxNoChartsTotal = 6;
@@ -184,7 +188,11 @@ function Draw_Chart_NoData(txtchartname,texttodisplay)
 	ctx.restore();
 }
 
-function Draw_Chart(txtchartname){
+/**----------------------------------------**/
+/** Modified by Martinski W. [2026-Jan-19] **/
+/**----------------------------------------**/
+function Draw_Chart(txtchartname)
+{
 	var chartperiod = getChartPeriod($('#'+txtchartname+'_Period option:selected').val());
 	var charttype = getChartType($('#'+txtchartname+'_Type option:selected').val());
 	var chartclientraw = $('#'+txtchartname+'_Clients option:selected').text();
@@ -192,39 +200,54 @@ function Draw_Chart(txtchartname){
 	var chartclient = chartclientraw.substring(chartclientraw.indexOf('(')+1,chartclientraw.indexOf(')',chartclientraw.indexOf('(')+1))
 
 	var dataobject;
-	if(chartclientraw == 'All (*)'){
+	if (chartclientraw == 'All (*)')
+	{
 		dataobject = window[txtchartname+chartperiod];
 	}
-	else{
+	else
+	{
 		dataobject = window[txtchartname+chartperiod+'clients'];
 	}
-	if(typeof dataobject === 'undefined' || dataobject === null){ Draw_Chart_NoData(txtchartname,'No data to display'); return; }
-	if(dataobject.length == 0){ Draw_Chart_NoData(txtchartname,'No data to display'); return; }
+	if (typeof dataobject === 'undefined' || dataobject === null || dataobject.length === 0)
+	{
+		Draw_Chart_NoData(txtchartname,'No data to display');
+		return;
+	}
+	var chartData, chartLongLabels, chartShortLabels = [];
 
-	var chartData,chartLabels;
-
-	if(chartclientraw == 'All (*)'){
+	if (chartclientraw == 'All (*)')
+	{
 		chartData = dataobject.map(function(d){return d.Count});
-		chartLabels = dataobject.map(function(d){return d.ReqDmn});
+		chartLongLabels = dataobject.map(function(d){return d.ReqDmn});
 	}
-	else{
-		chartData = dataobject.filter(function(item){
-			return item.SrcIP == chartclient;
-		}).map(function(d){return d.Count});
-		chartLabels = dataobject.filter(function(item){
-			return item.SrcIP == chartclient;
-		}).map(function(d){return d.ReqDmn});
+	else
+	{
+		chartData = dataobject.filter(function(item){return item.SrcIP == chartclient;}).map(function(d){return d.Count});
+		chartLongLabels = dataobject.filter(function(item){return item.SrcIP == chartclient;}).map(function(d){return d.ReqDmn});
 	}
 
-	$.each(chartLabels,function(index,value){
-		chartLabels[index] = chunk(value.toLowerCase(),30).join('\n');
+	for (var indx = 0; indx < chartLongLabels.length; indx++)
+	{
+		if (chartLongLabels[indx].length <= 33)
+		{ chartShortLabels.push(chartLongLabels[indx]); }
+		else
+		{ chartShortLabels.push(chartLongLabels[indx].substr(0, 25) + '...'); }
+	}
+
+	$.each(chartShortLabels,function(index,value){
+		chartShortLabels[index] = ChunkString(value.toLowerCase(),50).join('\n');
+	});
+
+	$.each(chartLongLabels,function(index,value){
+		chartLongLabels[index] = ChunkString(value.toLowerCase(),50).join('\n');
 	});
 
 	var objchartname = window['Chart'+txtchartname];;
 
-	if(objchartname != undefined) objchartname.destroy();
+	if (objchartname !== undefined) { objchartname.destroy(); }
 	var ctx = document.getElementById('canvasChart'+txtchartname).getContext('2d');
-	var chartOptions = {
+	var chartOptions = 
+	{
 		segmentShowStroke: false,
 		segmentStrokeColor: '#000',
 		animationEasing: 'easeOutQuart',
@@ -250,12 +273,15 @@ function Draw_Chart(txtchartname){
 			position: 'top'
 		},
 		tooltips: {
-			callbacks: {
-				title: function(tooltipItem,data){
-					return data.labels[tooltipItem[0].index];
+			callbacks:
+			{
+				title: function(tooltipItem,data)
+				{
+					return data.labelsLong[tooltipItem[0].index];
 				},
-				label: function(tooltipItem,data){
-					return comma(data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index]);
+				label: function(tooltipItem,data)
+				{
+					return data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
 				}
 			},
 			mode: 'point',
@@ -340,12 +366,15 @@ function Draw_Chart(txtchartname){
 			}
 		}
 	};
-	var chartDataset = {
-		labels: chartLabels,
+
+	var chartDataset =
+	{
+		labels: chartShortLabels,
+		labelsLong: chartLongLabels,
 		datasets: [{
 			data: chartData,
 			borderWidth: 1,
-			backgroundColor: poolColors(chartLabels.length),
+			backgroundColor: poolColors(chartLongLabels.length),
 			borderColor: '#000000'
 		}]
 	};
@@ -354,11 +383,10 @@ function Draw_Chart(txtchartname){
 		options: chartOptions,
 		data: chartDataset,
 		plugins: [{
-			beforeInit: function(chart){
-				chart.data.labels.forEach(function(e,i,a){
-					if(/\n/.test(e)){
-						a[i] = e.split(/\n/);
-					}
+			beforeInit: function(chart)
+			{
+				chart.data.labelsLong.forEach(function(e,i,a){
+					if (/\n/.test(e)) { a[i] = e.split(/\n/); }
 				});
 			}
 		}]
@@ -366,20 +394,26 @@ function Draw_Chart(txtchartname){
 	window['Chart'+txtchartname] = objchartname;
 }
 
-function Draw_Time_Chart(txtchartname){
+function Draw_Time_Chart(txtchartname)
+{
 	var chartperiod = getChartPeriod($('#'+txtchartname+'time_Period option:selected').val());
 	var txttitle = 'DNS Queries';
 	var txtunitx = timeunitlist[$('#'+txtchartname+'time_Period option:selected').val()];
 	var numunitx = intervallist[$('#'+txtchartname+'time_Period option:selected').val()];
 	var dataobject = window[txtchartname+chartperiod+'time'];
 
-	if(typeof dataobject === 'undefined' || dataobject === null){ Draw_Chart_NoData(txtchartname+'time','No data to display'); return; }
-	if(dataobject.length == 0){ Draw_Chart_NoData(txtchartname+'time','No data to display'); return; }
+	if (typeof dataobject === 'undefined' || dataobject === null || dataobject.length === 0)
+	{
+		Draw_Chart_NoData(txtchartname+'time','No data to display');
+		return;
+	}
 
 	var unique = [];
 	var chartQueryTypes = [];
-	for(let i = 0; i < dataobject.length; i++ ){
-		if( !unique[dataobject[i].Fieldname]){
+	for (let i = 0; i < dataobject.length; i++)
+	{
+		if (!unique[dataobject[i].Fieldname])
+		{
 			chartQueryTypes.push(dataobject[i].Fieldname);
 			unique[dataobject[i].Fieldname] = 1;
 		}
@@ -388,16 +422,19 @@ function Draw_Time_Chart(txtchartname){
 	var chartData = dataobject.map(function(d){ return {x: d.Time,y: d.QueryCount}});
 	var objchartname = window['Chart'+txtchartname+'time'];;
 
-	factor=0;
-	if(txtunitx=='hour'){
-		factor=60*60*1000;
+	let factor = 0, hour_factor = (60 * 60 * 1000);
+	if (txtunitx === 'hour')
+	{
+		factor = hour_factor;
 	}
-	else if(txtunitx=='day'){
-		factor=60*60*24*1000;
+	else if (txtunitx === 'day')
+	{
+		factor = (hour_factor * 24);
 	}
-	if(objchartname != undefined) objchartname.destroy();
+	if (objchartname != undefined) { objchartname.destroy(); }
 	var ctx = document.getElementById('canvasChart'+txtchartname+'time').getContext('2d');
-	var lineOptions = {
+	var lineOptions =
+	{
 		segmentShowStroke : false,
 		segmentStrokeColor : '#000',
 		animationEasing : 'easeOutQuart',
@@ -421,10 +458,10 @@ function Draw_Time_Chart(txtchartname){
 				type: 'time',
 				gridLines: { display: true,color: '#282828' },
 				ticks: {
-					min: moment().subtract(numunitx,txtunitx+'s'),
+					min: moment().subtract(numunitx, txtunitx+'s'),
 					display: true
 				},
-				time: { parser: 'X',unit: txtunitx,stepSize: 1 }
+				time: { parser: 'X',unit: txtunitx, stepSize: 1}
 			}],
 			yAxes: [{
 				type: getChartScale($('#'+txtchartname+'time_Scale option:selected').val(),'time','y'),
@@ -483,11 +520,13 @@ function Draw_Time_Chart(txtchartname){
 	window['Chart'+txtchartname+'time']=objchartname;
 }
 
-function getDataSets(txtchartname,objdata,objQueryTypes){
+function getDataSets(txtchartname,objdata,objQueryTypes)
+{
 	var datasets = [];
 	colourname='#fc8500';
 
-	for(var i = 0; i < objQueryTypes.length; i++){
+	for (var i = 0; i < objQueryTypes.length; i++)
+	{
 		var querytypedata = objdata.filter(function(item){
 			return item.Fieldname == objQueryTypes[i];
 		}).map(function(d){return {x: d.Time,y: d.QueryCount}});
@@ -498,49 +537,61 @@ function getDataSets(txtchartname,objdata,objQueryTypes){
 	return datasets;
 }
 
-function chunk(str,n){
-	var ret = [];
-	var i;
-	var len;
+function ChunkString(theString,chunkSize)
+{
+	var strArray = [];
+	var strLength = theString.length;
 
-	for(var i = 0,len = str.length; i < len; i += n){
-		ret.push(str.substr(i,n));
+	for (var indx = 0; indx < strLength; indx += chunkSize)
+	{
+		strArray.push(theString.substr(indx,chunkSize));
 	}
-
-	return ret;
+	return strArray;
 };
 
-function LogarithmicFormatter(tickValue,index,ticks){
-	if(this.type != 'logarithmic'){
-		if(! isNaN(tickValue)){
+function LogarithmicFormatter(tickValue,index,ticks)
+{
+	if (this.type !== 'logarithmic')
+	{
+		if (! isNaN(tickValue))
+		{
 			return round(tickValue,0).toFixed(0);
 		}
-		else{
+		else
+		{
 			return tickValue;
 		}
 	}
-	else{
+	else
+	{
 		var labelOpts =  this.options.ticks.labels || {};
 		var labelIndex = labelOpts.index || ['min','max'];
 		var labelSignificand = labelOpts.significand || [1,2,5];
 		var significand = tickValue / (Math.pow(10,Math.floor(Chart.helpers.log10(tickValue))));
 		var emptyTick = labelOpts.removeEmptyLines === true ? undefined : '';
 		var namedIndex = '';
-		if(index === 0){
+		if (index === 0)
+		{
 			namedIndex = 'min';
 		}
-		else if(index === ticks.length - 1){
+		else if (index === ticks.length - 1)
+		{
 			namedIndex = 'max';
 		}
-		if(labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1){
-			if(tickValue === 0){
+		if (labelOpts === 'all' || labelSignificand.indexOf(significand) !== -1 || labelIndex.indexOf(index) !== -1 || labelIndex.indexOf(namedIndex) !== -1)
+		{
+			if (tickValue === 0)
+			{
 				return '0';
 			}
-			else{
-				if(! isNaN(tickValue)){
+			else
+			{
+				if (! isNaN(tickValue))
+				{
 					return round(tickValue,0).toFixed(0);
 				}
-				else{
+				else
+				{
 					return tickValue;
 				}
 			}
@@ -551,24 +602,28 @@ function LogarithmicFormatter(tickValue,index,ticks){
 
 function GetCookie(cookiename,returntype)
 {
-	if(cookie.get('uidivstats_'+cookiename) != null){
+	if (cookie.get('uidivstats_'+cookiename) !== null)
+	{
 		return cookie.get('uidivstats_'+cookiename);
 	}
-	else{
-		if(returntype == 'string'){
+	else
+	{
+		if (returntype === 'string'){
 			return '';
 		}
-		else if(returntype == 'number'){
+		else if(returntype === 'number'){
 			return 0;
 		}
 	}
 }
 
-function SetCookie(cookiename,cookievalue){
+function SetCookie(cookiename,cookievalue)
+{
 	cookie.set('uidivstats_'+cookiename,cookievalue,10 * 365);
 }
 
-function SetCurrentPage(){
+function SetCurrentPage()
+{
 	document.form.next_page.value = window.location.pathname.substring(1);
 	document.form.current_page.value = window.location.pathname.substring(1);
 }
@@ -616,6 +671,8 @@ function get_sqldata_file()
 		{
 			var backgroundProcsStateStr;
 			SetuiDivStatsTitle();
+			showhide('imgUpdateStats',false);
+			showhide('uidivstats_text',false);
 			document.getElementById('databaseSize_text').textContent = 'Database Size: '+sqlDatabaseFileSize;
 			document.getElementById('tmpfsFreeSpace_text').innerHTML =
 			    'TMPFS Reported: '+tmpfsAvailableSpace+'<span style="padding-left:25px;">RAM Available: '+ramAvailableSpace+'</span>';
@@ -642,20 +699,24 @@ function get_clients_file()
 		error: function(xhr){
 			setTimeout(get_clients_file,1000);
 		},
-		success: function(){
-			for(var i = 0; i < metriclist.length; i++){
+		success: function()
+		{
+			for (var i = 0; i < metriclist.length; i++)
+			{
 				Draw_Chart_NoData(metriclist[i],'Data loading...');
 				$('#'+metriclist[i]+'_Period').val(GetCookie(metriclist[i]+'_Period','number'));
 				$('#'+metriclist[i]+'_Type').val(GetCookie(metriclist[i]+'_Type','number'));
 				$('#'+metriclist[i]+'_Scale').val(GetCookie(metriclist[i]+'_Scale','number'));
 				ChartScaleOptions($('#'+metriclist[i]+'_Type')[0]);
-				for(var i2 = 0; i2 < chartlist.length; i2++){
+				for (var i2 = 0; i2 < chartlist.length; i2++)
+				{
 					d3.csv('/ext/uiDivStats/csv/'+metriclist[i]+chartlist[i2]+'.htm').then(SetGlobalDataset.bind(null,metriclist[i]+chartlist[i2]));
 					d3.csv('/ext/uiDivStats/csv/'+metriclist[i]+chartlist[i2]+'clients.htm').then(SetGlobalDataset.bind(null,metriclist[i]+chartlist[i2]+'clients'));
 				}
 			}
 			Draw_Chart_NoData('TotalBlockedtime','Data loading...');
-			for(var i = 0; i < chartlist.length; i++){
+			for (var i = 0; i < chartlist.length; i++)
+			{
 				$('#TotalBlockedtime_Period').val(GetCookie('TotalBlockedtime_Period','number'));
 				$('#TotalBlockedtime_Scale').val(GetCookie('TotalBlockedtime_Scale','number'));
 				d3.csv('/ext/uiDivStats/csv/TotalBlocked'+chartlist[i]+'time.htm').then(SetGlobalDataset.bind(null,'TotalBlocked'+chartlist[i]+'time'));
@@ -729,34 +790,42 @@ function get_DivStats_file()
 	});
 }
 
-function SetGlobalDataset(txtchartname,dataobject){
+function SetGlobalDataset(txtchartname,dataobject)
+{
 	window[txtchartname] = dataobject;
 
-	if(txtchartname.indexOf('TotalBlocked') != -1){
+	if (txtchartname.indexOf('TotalBlocked') != -1)
+	{
 		currentNoChartsTotalBlocked++;
 		currentNoChartsOverall++;
-		if(currentNoChartsTotalBlocked == maxNoChartsTotalBlocked){
+		if (currentNoChartsTotalBlocked == maxNoChartsTotalBlocked)
+		{
 			Draw_Time_Chart('TotalBlocked');
 		}
 	}
-	else if(txtchartname.indexOf('Blocked') != -1){
+	else if (txtchartname.indexOf('Blocked') != -1)
+	{
 		currentNoChartsBlocked++;
 		currentNoChartsOverall++;
-		if(currentNoChartsBlocked == maxNoChartsBlocked){
+		if (currentNoChartsBlocked == maxNoChartsBlocked)
+		{
 			SetClients('Blocked');
 			Draw_Chart('Blocked');
 		}
 	}
-	else if(txtchartname.indexOf('Total') != -1){
+	else if (txtchartname.indexOf('Total') != -1)
+	{
 		currentNoChartsTotal++;
 		currentNoChartsOverall++;
-		if(currentNoChartsTotal == maxNoChartsTotal){
+		if (currentNoChartsTotal == maxNoChartsTotal)
+		{
 			SetClients('Total');
 			Draw_Chart('Total');
 		}
 	}
 
-	if(currentNoChartsOverall == maxNoChartsOverall){
+	if (currentNoChartsOverall == maxNoChartsOverall)
+	{
 		showhide('imgUpdateStats',false);
 		showhide('uidivstats_text',false);
 		showhide('btnUpdateStats',true);
@@ -765,20 +834,24 @@ function SetGlobalDataset(txtchartname,dataobject){
 	}
 }
 
-function SetClients(txtchartname){
+function SetClients(txtchartname)
+{
 	var dataobject = window[txtchartname+getChartPeriod($('#'+txtchartname+'_Period option:selected').val())+'clients'];
 
 	var unique = [];
 	var chartClients = [];
-	for(let i = 0; i < dataobject.length; i++ ){
-		if( !unique[dataobject[i].SrcIP]){
+	for (let i = 0; i < dataobject.length; i++)
+	{
+		if (!unique[dataobject[i].SrcIP])
+		{
 			chartClients.push(dataobject[i].SrcIP);
 			unique[dataobject[i].SrcIP] = 1;
 		}
 	}
 
 	chartClients.sort();
-	for(var i = 0; i < chartClients.length; i++){
+	for (var i = 0; i < chartClients.length; i++)
+	{
 		var arrclient = hostiparray.filter(function(item){
 			return item[0] == chartClients[i];
 		})[0];
@@ -795,7 +868,8 @@ function ScriptUpdateLayout()
 	var serverver = GetVersionNumber('server');
 	$('#uidivstats_version_local').text(localver);
 
-	if(localver != serverver && serverver != 'N/A'){
+	if (localver != serverver && serverver != 'N/A')
+	{
 		$('#uidivstats_version_server').text('Updated version available: '+serverver);
 		showhide('btnChkUpdate',false);
 		showhide('uidivstats_version_server',true);
@@ -812,19 +886,24 @@ function update_status()
 		error: function(xhr){
 			setTimeout(update_status,1000);
 		},
-		success: function(){
-			if(updatestatus == 'InProgress'){
+		success: function()
+		{
+			if (updatestatus == 'InProgress')
+			{
 				setTimeout(update_status,1000);
 			}
-			else{
+			else
+			{
 				document.getElementById('imgChkUpdate').style.display = 'none';
 				showhide('uidivstats_version_server',true);
-				if(updatestatus != 'None'){
+				if (updatestatus != 'None')
+				{
 					$('#uidivstats_version_server').text('Updated version available: '+updatestatus);
 					showhide('btnChkUpdate',false);
 					showhide('btnDoUpdate',true);
 				}
-				else{
+				else
+				{
 					$('#uidivstats_version_server').text('No update available');
 					showhide('btnChkUpdate',true);
 					showhide('btnDoUpdate',false);
@@ -834,7 +913,7 @@ function update_status()
 	});
 }
 
-function CheckUpdate()
+function CheckAddOnUpdate()
 {
 	showhide('btnChkUpdate',false);
 	document.formScriptActions.action_script.value='start_uiDivStatscheckupdate';
@@ -846,7 +925,7 @@ function CheckUpdate()
 /**----------------------------------------**/
 /** Modified by Martinski W. [2024-Dec-15] **/
 /**----------------------------------------**/
-function DoUpdate()
+function DoAddOnUpdate()
 {
 	document.form.action_script.value = 'start_uiDivStatsdoupdate';
 	document.form.action_wait.value = 10;
@@ -897,19 +976,24 @@ $.fn.serializeObject = function(){
 	return o;
 };
 
-function GetVersionNumber(versiontype){
+function GetVersionNumber(versiontype)
+{
 	var versionprop;
-	if(versiontype == 'local'){
+	if (versiontype === 'local')
+	{
 		versionprop = custom_settings.uidivstats_version_local;
 	}
-	else if(versiontype == 'server'){
+	else if (versiontype === 'server')
+	{
 		versionprop = custom_settings.uidivstats_version_server;
 	}
 
-	if(typeof versionprop == 'undefined' || versionprop == null){
+	if (typeof versionprop === 'undefined' || versionprop === null)
+	{
 		return 'N/A';
 	}
-	else{
+	else
+	{
 		return versionprop;
 	}
 }
@@ -952,7 +1036,8 @@ function updateStats()
 }
 
 var myinterval;
-function StartUpdateStatsInterval(){
+function StartUpdateStatsInterval()
+{
 	myinterval = setInterval(update_uidivstats,1000);
 }
 
@@ -965,21 +1050,25 @@ function update_uidivstats()
 		dataType: 'script',
 		timeout: 1000,
 		error: function(xhr){
-			//do nothing
+			//do nothing//
 		},
-		success: function(){
-			if(uidivstatsstatus == 'InProgress'){
+		success: function()
+		{
+			if (uidivstatsstatus == 'InProgress')
+			{
 				showhide('imgUpdateStats',true);
 				showhide('uidivstats_text',true);
 				document.getElementById('uidivstats_text').innerHTML = 'Stat update in progress - '+statcount+'s elapsed';
 			}
-			else if(uidivstatsstatus == 'Done'){
+			else if (uidivstatsstatus == 'Done')
+			{
 				document.getElementById('uidivstats_text').innerHTML = 'Refreshing charts...';
 				statcount=2;
 				clearInterval(myinterval);
 				PostStatUpdate();
 			}
-			else if(uidivstatsstatus == 'LOCKED'){
+			else if (uidivstatsstatus == 'LOCKED')
+			{
 				showhide('imgUpdateStats',false);
 				document.getElementById('uidivstats_text').innerHTML = 'Stat update already running!';
 				showhide('uidivstats_text',true);
@@ -990,125 +1079,150 @@ function update_uidivstats()
 	});
 }
 
-function reload(){
+function reload()
+{
 	location.reload(true);
 }
 
-function ToggleFill(){
-	if(ShowFill == 'false'){
+function ToggleFill()
+{
+	if (ShowFill === 'false')
+	{
 		ShowFill = 'origin';
 		SetCookie('ShowFill','origin');
 	}
-	else{
+	else
+	{
 		ShowFill = 'false';
 		SetCookie('ShowFill','false');
 	}
-	for(var i = 0; i < metriclist.length; i++){
-		for(var i2 = 0; i2 < chartlist.length; i2++){
+	for (var i = 0; i < metriclist.length; i++)
+	{
+		for (var i2 = 0; i2 < chartlist.length; i2++)
+		{
 			window['Chart'+metriclist[i]+chartlist[i2]+'time'].data.datasets[0].fill=ShowFill;
 			window['Chart'+metriclist[i]+chartlist[i2]+'time'].update();
 		}
 	}
 }
 
-function getLimit(datasetname,axis,maxmin,isannotation){
+function getLimit(datasetname,axis,maxmin,isannotation)
+{
 	var limit=0;
 	var values;
-	if(axis == 'x'){
+	if (axis === 'x'){
 		values = datasetname.map(function(o){ return o.x } );
 	}
 	else{
 		values = datasetname.map(function(o){ return o.y } );
 	}
 
-	if(maxmin == 'max'){
+	if (maxmin === 'max'){
 		limit = Math.max.apply(Math,values);
 	}
 	else{
 		limit = Math.min.apply(Math,values);
 	}
-	if(maxmin == 'max' && limit == 0 && isannotation == false){
+	if (maxmin === 'max' && limit === 0 && isannotation === false){
 		limit = 1;
 	}
 	return limit;
 }
 
-function getAverage(datasetname){
+function getAverage(datasetname)
+{
 	var total = 0;
-	for(var i = 0; i < datasetname.length; i++){
+	for (var i = 0; i < datasetname.length; i++){
 		total += (datasetname[i].y*1);
 	}
 	var avg = total / datasetname.length;
 	return avg;
 }
 
-function getMax(datasetname){
+function getMax(datasetname)
+{
 	return Math.max(...datasetname);
 }
 
-function round(value,decimals){
+function round(value,decimals)
+{
 	return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
 }
 
-function getRandomColor(){
+function getRandomColor()
+{
 	var r = Math.floor(Math.random() * 255);
 	var g = Math.floor(Math.random() * 255);
 	var b = Math.floor(Math.random() * 255);
 	return 'rgba('+r+','+g+','+b+',1)';
 }
 
-function poolColors(a){
+function poolColors(number)
+{
 	var pool = [];
-	for(var i = 0; i < a; i++){
+	for (var i = 0; i < number; i++)
+	{
 		pool.push(getRandomColor());
 	}
 	return pool;
 }
 
-function getChartType(layout){
+function getChartType(layout)
+{
 	var charttype = 'horizontalBar';
-	if(layout == 0) charttype = 'horizontalBar';
-	else if(layout == 1) charttype = 'bar';
-	else if(layout == 2) charttype = 'pie';
+	if (layout == 0) charttype = 'horizontalBar';
+	else if (layout == 1) charttype = 'bar';
+	else if (layout == 2) charttype = 'pie';
 	return charttype;
 }
 
-function getChartPeriod(period){
+function getChartPeriod(period)
+{
 	var chartperiod = 'daily';
-	if(period == 0) chartperiod = 'daily';
-	else if(period == 1) chartperiod = 'weekly';
-	else if(period == 2) chartperiod = 'monthly';
+	if (period == 0) chartperiod = 'daily';
+	else if (period == 1) chartperiod = 'weekly';
+	else if (period == 2) chartperiod = 'monthly';
 	return chartperiod;
 }
 
-function getChartScale(scale,charttype,axis){
+function getChartScale(scale,charttype,axis)
+{
 	var chartscale = 'category';
-	if(scale == 0){
-		if((charttype == 'horizontalBar' && axis == 'x') || (charttype == 'bar' && axis == 'y') || (charttype == 'time' && axis == 'y')){
+	if (scale == 0)
+	{
+		if ((charttype === 'horizontalBar' && axis === 'x') || (charttype === 'bar' && axis === 'y') || (charttype === 'time' && axis === 'y'))
+		{
 			chartscale = 'linear';
 		}
 	}
-	else if(scale == 1){
-		if((charttype == 'horizontalBar' && axis == 'x') || (charttype == 'bar' && axis == 'y') || (charttype == 'time' && axis == 'y')){
+	else if (scale == 1)
+	{
+		if ((charttype === 'horizontalBar' && axis === 'x') || (charttype === 'bar' && axis === 'y') || (charttype === 'time' && axis === 'y'))
+		{
 			chartscale = 'logarithmic';
 		}
 	}
 	return chartscale;
 }
 
-function ChartScaleOptions(e){
+function ChartScaleOptions(e)
+{
 	var chartname = e.id.substring(0,e.id.indexOf('_'));
 	let dropdown = $('#'+chartname+'_Scale');
-	if($('#'+chartname+'_Type option:selected').val() != 2){
-		if(dropdown[0].length == 1){
+	if ($('#'+chartname+'_Type option:selected').val() != 2)
+	{
+		if (dropdown[0].length == 1)
+		{
 			dropdown.empty();
 			dropdown.append($('<option></option>').attr('value',0).text('Linear'));
 			dropdown.append($('<option></option>').attr('value',1).text('Logarithmic'));
 			dropdown.prop('selectedIndex',0);
 		}
 	}
-	else{
-		if(dropdown[0].length == 2){
+	else
+	{
+		if (dropdown[0].length == 2)
+		{
 			dropdown.empty();
 			dropdown.append($('<option></option>').attr('value',0).text('Linear'));
 			dropdown.prop('selectedIndex',0);
@@ -1116,73 +1230,75 @@ function ChartScaleOptions(e){
 	}
 }
 
-function ZoomPanEnabled(charttype){
-	if(charttype == 'bar'){
-		return 'y';
+function ZoomPanEnabled(charttype)
+{
+	if (charttype === 'bar')
+	{ return 'y'; }
+	else if (charttype === 'horizontalBar')
+	{ return 'x'; }
+	else
+	{ return ''; }
+}
+
+function ZoomPanMax(charttype,axis,datasetname)
+{
+	if (axis === 'x')
+	{
+		if (charttype === 'bar')
+		{ return null; }
+		else if (charttype === 'horizontalBar')
+		{ return getMax(datasetname); }
+		else
+		{ return null; }
 	}
-	else if(charttype == 'horizontalBar'){
-		return 'x';
-	}
-	else{
-		return '';
+	else if (axis === 'y')
+	{
+		if (charttype === 'bar')
+		{ return getMax(datasetname); }
+		else if (charttype === 'horizontalBar')
+		{ return null; }
+		else
+		{ return null; }
 	}
 }
 
-function ZoomPanMax(charttype,axis,datasetname){
-	if(axis == 'x'){
-		if(charttype == 'bar'){
-			return null;
-		}
-		else if(charttype == 'horizontalBar'){
-			return getMax(datasetname);
-		}
-		else{
-			return null;
-		}
-	}
-	else if(axis == 'y'){
-		if(charttype == 'bar'){
-			return getMax(datasetname);
-		}
-		else if(charttype == 'horizontalBar'){
-			return null;
-		}
-		else{
-			return null;
-		}
-	}
-}
-
-function ResetZoom(){
-	for(var i = 0; i < metriclist.length; i++){
+function ResetZoom()
+{
+	for (var i = 0; i < metriclist.length; i++)
+	{
 		var chartobj = window['Chart'+metriclist[i]];
 		if(typeof chartobj === 'undefined' || chartobj === null){ continue; }
 		chartobj.resetZoom();
 	}
 	var chartobj = window['ChartTotalBlockedtime'];
-	if(typeof chartobj === 'undefined' || chartobj === null){ return; }
+	if (typeof chartobj === 'undefined' || chartobj === null){ return; }
 	chartobj.resetZoom();
 }
 
-function DragZoom(button){
+function DragZoom(button)
+{
 	var drag = true;
 	var pan = false;
 	var buttonvalue = '';
-	if(button.value.indexOf('On') != -1){
+	if (button.value.indexOf('On') !== -1)
+	{
 		drag = false;
 		pan = true;
 		buttonvalue = 'Drag Zoom Off';
 	}
-	else{
+	else
+	{
 		drag = true;
 		pan = false;
 		buttonvalue = 'Drag Zoom On';
 	}
 
-	for(var i = 0; i < metriclist.length; i++){
-		for(var i2 = 0; i2 < chartlist.length; i2++){
+	for (var i = 0; i < metriclist.length; i++)
+	{
+		for (var i2 = 0; i2 < chartlist.length; i2++)
+		{
 			var chartobj = window['Chart'+metriclist[i]+chartlist[i2]];
-			if(typeof chartobj === 'undefined' || chartobj === null){ continue; }
+			if (typeof chartobj === 'undefined' || chartobj === null){ continue; }
 			chartobj.options.plugins.zoom.zoom.drag = drag;
 			chartobj.options.plugins.zoom.pan.enabled = pan;
 			button.value = buttonvalue;
@@ -1191,131 +1307,135 @@ function DragZoom(button){
 	}
 }
 
-function showGrid(e,axis){
-	if(e == null){
+function showGrid(e,axis)
+{
+	if (e === null)
+	{ return true; }
+	else if (e === 'pie')
+	{ return false; }
+	else
+	{ return true; }
+}
+
+function showAxis(e,axis)
+{
+	if (e === 'bar' && axis === 'x')
+	{
 		return true;
 	}
-	else if(e == 'pie'){
+	else
+	{
+		if (e === null)
+		{ return true; }
+		else if (e === 'pie')
+		{ return false; }
+		else
+		{ return true; }
+	}
+}
+
+function showTicks(e,axis)
+{
+	if (e === 'bar' && axis === 'x')
+	{
 		return false;
 	}
-	else{
-		return true;
+	else
+	{
+		if (e === null)
+		{ return true; }
+		else if (e === 'pie')
+		{ return false; }
+		else
+		{ return true; }
 	}
 }
 
-function showAxis(e,axis){
-	if(e == 'bar' && axis == 'x'){
-		return true;
-	}
-	else{
-		if(e == null){
-			return true;
-		}
-		else if(e == 'pie'){
-			return false;
-		}
-		else{
-			return true;
-		}
-	}
+function showLegend(e)
+{
+	if (e === 'pie')
+	{ return true; }
+	else
+	{ return false; }
 }
 
-function showTicks(e,axis){
-	if(e == 'bar' && axis == 'x'){
-		return false;
-	}
-	else{
-		if(e == null){
-			return true;
-		}
-		else if(e == 'pie'){
-			return false;
-		}
-		else{
-			return true;
-		}
-	}
+function showTitle(e)
+{
+	if (e === 'pie')
+	{ return true; }
+	else
+	{ return false; }
 }
 
-function showLegend(e){
-	if(e == 'pie'){
-		return true;
-	}
-	else{
-		return false;
-	}
+function getChartPadding(e)
+{
+	if (e === 'bar')
+	{ return 10; }
+	else
+	{ return 0; }
 }
 
-function showTitle(e){
-	if(e == 'pie'){
-		return true;
-	}
-	else{
-		return false;
-	}
-}
-
-function getChartPadding(e){
-	if(e == 'bar'){
-		return 10;
-	}
-	else{
-		return 0;
-	}
-}
-
-function getChartLegendTitle(){
+function getChartLegendTitle()
+{
 	var chartlegendtitlelabel = 'Domain name';
 
-	for(var i = 0; i < 350 - chartlegendtitlelabel.length; i++){
+	for (var i = 0; i < (350 - chartlegendtitlelabel.length); i++)
+	{
 		chartlegendtitlelabel = chartlegendtitlelabel+' ';
 	}
-
 	return chartlegendtitlelabel;
 }
 
-function getAxisLabel(type,axis){
-	var axislabel = '';
-	if(axis == 'x'){
-		if(type == 'horizontalBar') axislabel = 'Hits';
-			else if(type == 'bar'){
-				axislabel = '';
-			} else if(type == 'pie') axislabel = '';
-			return axislabel;
-	} else if(axis == 'y'){
-		if(type == 'horizontalBar'){
-			axislabel = '';
-		} else if(type == 'bar') axislabel = 'Hits';
-		else if(type == 'pie') axislabel = '';
-		return axislabel;
+function getAxisLabel(type,axis)
+{
+	var axisLabel = '';
+	if (axis === 'x')
+	{
+		if (type === 'horizontalBar') { axisLabel = 'Hits'; }
+		else if (type === 'bar') { axisLabel = ''; } 
+		else if (type === 'pie') { axisLabel = ''; }
+		return axisLabel;
+	} 
+	else if (axis === 'y')
+	{
+		if (type === 'horizontalBar') { axisLabel = ''; }
+		else if(type == 'bar') { axisLabel = 'Hits'; }
+		else if(type == 'pie') { axisLabel = ''; }
+		return axisLabel;
 	}
 }
 
-function changeChart(e){
+function changeChart(e)
+{
 	value = e.value * 1;
 	name = e.id.substring(0,e.id.indexOf('_'));
-	if(e.id.indexOf('Clients') == -1){
+	if (e.id.indexOf('Clients') === -1)
+	{
 		SetCookie(e.id,value);
 	}
-	if(e.id.indexOf('Period') != -1){
-		if(e.id.indexOf('TotalBlocked') == -1){
+	if (e.id.indexOf('Period') !== -1)
+	{
+		if (e.id.indexOf('TotalBlocked') === -1)
+		{
 			$('#'+name+'_Clients option[value!=0]').remove();
 			SetClients(name);
 		}
 	}
-	if(e.id.indexOf('time') == -1){
+	if (e.id.indexOf('time') === -1)
+	{
 		Draw_Chart(name);
 	}
-	else{
+	else
+	{
 		Draw_Time_Chart(name.replace('time',''));
 	}
 }
 
-function changeTable(e){
+function changeTable(e)
+{
 	value = e.value * 1;
 	name = e.id.substring(0,e.id.indexOf('_'));
 	SetCookie(e.id,value);
-
 	var tableperiod = getChartPeriod(value);
 
 	$('#keystatstotal').text(window['QueriesTotal'+tableperiod]);
@@ -1323,7 +1443,8 @@ function changeTable(e){
 	$('#keystatspercent').text(window['BlockedPercentage'+tableperiod]);
 }
 
-function BuildChartHtml(txttitle,txtbase,istime,perip){
+function BuildChartHtml(txttitle,txtbase,istime,perip)
+{
 	var charthtml = '<div style="line-height:10px;">&nbsp;</div>';
 	charthtml += '<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="uidivstats_chart_'+txtbase+'">';
 	charthtml += '<thead class="collapsible-jquery"';
@@ -1339,7 +1460,8 @@ function BuildChartHtml(txttitle,txtbase,istime,perip){
 	charthtml += '</select>';
 	charthtml += '</td>';
 	charthtml += '</tr>';
-	if(istime == 'false'){
+	if (istime === 'false')
+	{
 		charthtml += '<tr class="even">';
 		charthtml += '<th width="40%">Layout for chart</th>';
 		charthtml += '<td>';
@@ -1360,7 +1482,8 @@ function BuildChartHtml(txttitle,txtbase,istime,perip){
 	charthtml += '</select>';
 	charthtml += '</td>';
 	charthtml += '</tr>';
-	if(perip == 'true'){
+	if (perip === 'true')
+	{
 		charthtml += '<tr class="even">';
 		charthtml += '<th width="40%">Client to display</th>';
 		charthtml += '<td>';
@@ -1379,7 +1502,8 @@ function BuildChartHtml(txttitle,txtbase,istime,perip){
 	return charthtml;
 }
 
-function BuildKeyStatsTableHtml(txttitle,txtbase){
+function BuildKeyStatsTableHtml(txttitle,txtbase)
+{
 	var tablehtml = '<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="uidivstats_table_keystats">';
 	tablehtml += '<col style="width:40%;">';
 	tablehtml += '<col style="width:60%;">';
@@ -1431,7 +1555,8 @@ function BuildKeyStatsTableHtml(txttitle,txtbase){
 	return tablehtml;
 }
 
-function BuildQueryLogTableHtmlNoData(){
+function BuildQueryLogTableHtmlNoData()
+{
 	var tablehtml='<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="sortTable">';
 	tablehtml += '<tr>';
 	tablehtml += '<td colspan="3" class="nodata">';
@@ -1442,7 +1567,8 @@ function BuildQueryLogTableHtmlNoData(){
 	return tablehtml;
 }
 
-function BuildQueryLogTableHtml(){
+function BuildQueryLogTableHtml()
+{
 	var tablehtml = '<table border="0" cellpadding="0" cellspacing="0" width="100%" class="sortTable" style="table-layout:fixed;" id="sortTable">';
 	tablehtml += '<col style="width:110px;">';
 	tablehtml += '<col style="width:320px;">';
@@ -1460,7 +1586,8 @@ function BuildQueryLogTableHtml(){
 	tablehtml += '</thead>';
 	tablehtml += '<tbody class="sortTableContent">';
 
-	for(var i = 0; i < arrayqueryloglines.length; i++){
+	for (var i = 0; i < arrayqueryloglines.length; i++)
+	{
 		tablehtml += '<tr class="sortRow">';
 		tablehtml += '<td>'+arrayqueryloglines[i].Time+'</td>';
 		tablehtml += '<td>'+arrayqueryloglines[i].ReqDmn+'</td>';
@@ -1476,29 +1603,33 @@ function BuildQueryLogTableHtml(){
 	return tablehtml;
 }
 
-function get_querylog_file(){
+function get_querylog_file()
+{
 	$.ajax({
 		url: '/ext/uiDivStats/csv/SQLQueryLog.htm',
 		dataType: 'text',
 		error: function(xhr){
 			tout = setTimeout(get_querylog_file,1000);
 		},
-		success: function(data){
+		success: function(data)
+		{
 			ParseQueryLog(data);
 			document.getElementById('imgRefreshNow').style.display = 'none';
 			showhide('spanRefreshNow',true);
-			if(document.getElementById('auto_refresh').checked){
+			if (document.getElementById('auto_refresh').checked){
 				tout = setTimeout(get_querylog_file,60000);
 			}
 		}
 	});
 }
 
-function ParseQueryLog(data){
+function ParseQueryLog(data)
+{
 	var arrayloglines = data.split('\n');
 	arrayloglines = arrayloglines.filter(Boolean);
 	arrayqueryloglines = [];
-	for(var i = 0; i < arrayloglines.length; i++){
+	for (var i = 0; i < arrayloglines.length; i++)
+	{
 		var logfields = arrayloglines[i].split('|');
 		var parsedlogline = new Object();
 		parsedlogline.Time = moment.unix(logfields[0]).format('YYYY-MM-DD HH:mm').trim();
@@ -1512,46 +1643,57 @@ function ParseQueryLog(data){
 	FilterQueryLog();
 }
 
-function FilterQueryLog(){
-	if( $('#filter_reqdmn').val() == '' && $('#filter_srcip').val() == '' && $('#filter_qrytype option:selected').val() == 0 && $('#filter_result option:selected').val() == 0 ){
+function FilterQueryLog()
+{
+	if ($('#filter_reqdmn').val() == '' && $('#filter_srcip').val() == '' && $('#filter_qrytype option:selected').val() == 0 && $('#filter_result option:selected').val() == 0 )
+	{
 		arrayqueryloglines = originalarrayqueryloglines;
 	}
-	else{
+	else
+	{
 		arrayqueryloglines = originalarrayqueryloglines;
 
-		if($('#filter_reqdmn').val() != '' ){
-			if($('#filter_reqdmn').val().startsWith('!')){
+		if ($('#filter_reqdmn').val() != '' )
+		{
+			if ($('#filter_reqdmn').val().startsWith('!'))
+			{
 				arrayqueryloglines = arrayqueryloglines.filter(function(item){
 					return item.ReqDmn.toLowerCase().indexOf($('#filter_reqdmn').val().replace('!','').toLowerCase()) == -1;
 				});
 			}
-			else{
+			else
+			{
 				arrayqueryloglines = arrayqueryloglines.filter(function(item){
 					return item.ReqDmn.toLowerCase().indexOf($('#filter_reqdmn').val().toLowerCase()) != -1;
 				});
 			}
 		}
 
-		if( $('#filter_srcip').val() != '' ){
-			if($('#filter_srcip').val().startsWith('!')){
+		if ( $('#filter_srcip').val() != '' )
+		{
+			if ($('#filter_srcip').val().startsWith('!'))
+			{
 				arrayqueryloglines = arrayqueryloglines.filter(function(item){
 					return item.SrcIP.indexOf($('#filter_srcip').val().replace('!','')) == -1;
 				});
 			}
-			else{
+			else
+			{
 				arrayqueryloglines = arrayqueryloglines.filter(function(item){
 					return item.SrcIP.indexOf($('#filter_srcip').val()) != -1;
 				});
 			}
 		}
 
-		if( $('#filter_qrytype option:selected').val() != 0 ){
+		if ( $('#filter_qrytype option:selected').val() != 0 )
+		{
 			arrayqueryloglines = arrayqueryloglines.filter(function(item){
 				return item.QryType == $('#filter_qrytype option:selected').text();
 			});
 		}
 
-		if( $('#filter_result option:selected').val() != 0 ){
+		if ( $('#filter_result option:selected').val() != 0 )
+		{
 			arrayqueryloglines = arrayqueryloglines.filter(function(item){
 				return item.Result == $('#filter_result option:selected').text();
 			});
@@ -1561,36 +1703,41 @@ function FilterQueryLog(){
 	SortTable(sortname+' '+sortdir.replace('desc','↑').replace('asc','↓').trim());
 }
 
-function SortTable(sorttext){
+function SortTable(sorttext)
+{
 	sortname = sorttext.replace('↑','').replace('↓','').trim();
 	var sortfield = sortname;
-	switch(sortname){
+	switch(sortname)
+	{
 		case 'Time':
 			sortfield='Time';
-		break;
+			break;
 		case 'Domain':
 			sortfield='ReqDmn';
-		break;
+			break;
 		case 'Client':
 			sortfield='SrcIP';
-		break;
+			break;
 		case 'Type':
 			sortfield='QryType';
-		break;
+			break;
 		case 'Result':
 			sortfield='Result';
-		break;
+			break;
 	}
 
-	if(sorttext.indexOf('↓') == -1 && sorttext.indexOf('↑') == -1){
+	if (sorttext.indexOf('↓') == -1 && sorttext.indexOf('↑') == -1)
+	{
 		eval('arrayqueryloglines = arrayqueryloglines.sort((a,b) => (a.'+sortfield+' > b.'+sortfield+') ? 1 : ((b.'+sortfield+' > a.'+sortfield+') ? -1 : 0)); ');
 		sortdir = 'asc';
 	}
-	else if(sorttext.indexOf('↓') != -1){
+	else if (sorttext.indexOf('↓') != -1)
+	{
 		eval('arrayqueryloglines = arrayqueryloglines.sort((a,b) => (a.'+sortfield+' > b.'+sortfield+') ? 1 : ((b.'+sortfield+' > a.'+sortfield+') ? -1 : 0)); ');
 		sortdir = 'asc';
 	}
-	else{
+	else
+	{
 		eval('arrayqueryloglines = arrayqueryloglines.sort((a,b) => (a.'+sortfield+' < b.'+sortfield+') ? 1 : ((b.'+sortfield+' < a.'+sortfield+') ? -1 : 0)); ');
 		sortdir = 'desc';
 	}
@@ -1610,7 +1757,8 @@ function SortTable(sorttext){
 	});
 }
 
-function Assign_EventHandlers(){
+function Assign_EventHandlers()
+{
 	$('.collapsible-jquery').off('click').on('click',function(){
 		$(this).siblings().toggle('fast',function(){
 			if($(this).css('display') == 'none'){
@@ -1650,6 +1798,7 @@ function Assign_EventHandlers(){
 	$('#auto_refresh').off('click').on('click',function(){ToggleRefresh();});
 }
 
-function ToggleRefresh(){
+function ToggleRefresh()
+{
 	$('#auto_refresh').prop('checked',function(i,v){ if(v){get_querylog_file();} else{clearTimeout(tout);} });
 }
