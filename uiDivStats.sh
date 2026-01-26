@@ -13,7 +13,7 @@
 ##       Forked from https://github.com/jackyaz/uiDivStats       ##
 ##                                                               ##
 ###################################################################
-# Last Modified: 2026-Jan-19
+# Last Modified: 2026-Jan-25
 #------------------------------------------------------------------
 
 #################        Shellcheck directives      ###############
@@ -35,8 +35,8 @@
 
 ### Start of script variables ###
 readonly SCRIPT_NAME="uiDivStats"
-readonly SCRIPT_VERSION="v4.0.14"
-readonly SCRIPT_VERSTAG="26011900"
+readonly SCRIPT_VERSION="v4.0.15"
+readonly SCRIPT_VERSTAG="26012522"
 SCRIPT_BRANCH="develop"
 SCRIPT_REPO="https://raw.githubusercontent.com/AMTM-OSR/$SCRIPT_NAME/$SCRIPT_BRANCH"
 readonly SCRIPT_DIR="/jffs/addons/$SCRIPT_NAME.d"
@@ -3040,7 +3040,7 @@ Check_Requirements()
 		if ! /opt/bin/grep -q '^log-facility=/opt/var/log/dnsmasq.log' /etc/dnsmasq.conf
 		then
 			Print_Output false "Diversion logging not enabled!" "$ERR"
-			Print_Output false "Open Diversion and use option l to enable logging"
+			Print_Output false "Open Diversion and use option l to enable logging" "$WARN"
 			CHECKSFAILED="true"
 		fi
 	fi
@@ -3078,7 +3078,7 @@ Menu_Install()
 	if ! Check_Requirements
 	then
 		Print_Output false "Requirements for $SCRIPT_NAME not met, please see above for the reason(s)" "$CRIT"
-		PressEnter
+		PressEnter ; echo
 		Clear_Lock
 		rm -f "/jffs/scripts/$SCRIPT_NAME" 2>/dev/null
 		exit 1
